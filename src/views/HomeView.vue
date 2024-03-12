@@ -1,0 +1,115 @@
+<template>
+  <section
+    class="sm:py-3 ml-2 w-3/4 sm:mx-auto bg-gradient-to-r from-green-900 to-blue-700 text-white rounded-lg border border-b-gray-400"
+  >
+    <div class="flex justify-center items-center my-1 sm:my-0 text-black">
+      <button class="hidden sm:block">
+        <img class="sm:w-8 h-8 mr-4" src="../components/icons/SearchBtn.svg" alt="" />
+      </button>
+      <input
+        v-model="searchKey"
+        class="text-center rounded-md outline-none border-2 focus:border-emerald-400"
+        type="text"
+        placeholder="Search"
+      />
+    </div>
+  </section>
+  <!-- loading logo -->
+  <div
+    v-show="load"
+    class="flex justify-center items-center h-screen absolute top-0 left-0 w-full bg-black bg-opacity-50"
+  >
+    <div class="relative flex justify-center items-center">
+      <div
+        class="absolute animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-purple-500"
+      ></div>
+      <img src="../components/icons/controller.svg" class="rounded-full h-24 w-24" />
+    </div>
+  </div>
+  <!-- loading logo -->
+
+  <div
+    class="w-3/4 mx-auto mt-4 sm:mt-3 grid sm:grid-cols-2 lg:grid-cols-3 justify-center items-center lg:pt-4 lg:gap-4 sm:gap-2"
+  >
+    <div
+      v-for="game in filteredList"
+      :key="game.id"
+      class="flex justify-center mx-auto mb-2 sm:mb-2 sm:mx-0 sm:w-auto items-center flex-col border border-wheat rounded-md bg-gradient-to-r from-slate-900 to-slate-700 text-white"
+    >
+      <h1
+        class="text-transparent bg-clip-text text-2xl font-bold bg-gradient-to-r to-emerald-600 from-sky-400 px-2"
+      >
+        {{ game.title }}
+      </h1>
+      <img class="mb-1" :src="game.thumbnail" alt="" />
+      <div class="flex flex-col md:flex-row justify-center items-center gap-2 sm:gap-4 lg:gap-8">
+        <div class="flex gap-2 md:flex-col xl:px-2 2xl:px-0">
+          <div
+            class="border border-gray-200 px-1 py-2 text-center font-bold rounded-lg bg-gradient-to-r from-emerald-600 to-sky-400 hover:text-slate-700"
+          >
+            <a :href="game.game_url">play now</a>
+          </div>
+          <RouterLink
+            class="border border-gray-200 p-2 font-bold rounded-lg bg-gradient-to-r from-emerald-600 to-sky-400 hover:text-slate-700"
+            :to="{ name: 'details', params: { id: game.id } }"
+            >Details</RouterLink
+          >
+        </div>
+        <div
+          class="flex flex-col border border-emerald-400 bg-gradient-to-r from-emerald-600 to-sky-400 rounded-md px-4 mb-2 xl:mr-2 2xl:mr-0"
+        >
+          <p>genre: {{ game.genre }}</p>
+          <p>Platform :{{ game.platform }}</p>
+          <p>Date :{{ game.release_date }}</p>
+          <p>{{ game.developer }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { onMounted, ref, watchEffect } from 'vue'
+import type { game } from '@/composables/gametype'
+
+const gameData = ref<game[]>([])
+const filteredList = ref<game[]>([])
+
+const searchKey = ref<string | null>(null)
+const load = ref(false)
+
+const search = () => {
+  filteredList.value = gameData.value.filter((game) => {
+    return game.title.toLowerCase().includes(searchKey.value!.toLowerCase())
+  })
+}
+
+watchEffect(() => {
+  if (searchKey.value != null) {
+    console.log('this what the user typed :', searchKey.value)
+    search()
+  }
+})
+
+onMounted(async () => {
+  load.value = true
+  const url = 'https://free-to-play-games-database.p.rapidapi.com/api/games'
+  const options = {
+    method: 'GET',
+    headers: {
+      'X-RapidAPI-Key': '7e0d111a46mshaff2632bf063a96p199446jsnba2496738986',
+      'X-RapidAPI-Host': 'free-to-play-games-database.p.rapidapi.com'
+    }
+  }
+
+  try {
+    const response = await fetch(url, options)
+    const result = await response.json()
+    gameData.value = result
+    filteredList.value = result
+    load.value = false
+  } catch (error) {
+    console.error(error)
+  }
+})
+</script>
